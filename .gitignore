@@ -1,0 +1,12 @@
+# Project exclude paths
+/db/database.js
+/db/init.js
+/Middleware/verifyToken.js
+/Models/Models.js
+/Models/User.js
+/Services/authService.js
+/Services/eventsService.js
+/Services/uploadService.js
+/Services/userService.js
+/Tests/user.test.js
+/server.js
