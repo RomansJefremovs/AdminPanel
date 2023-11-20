@@ -1,5 +1,4 @@
-import fastify, {FastifyReply, FastifyRequest} from 'fastify';
-import bcrypt from 'bcrypt';
+import {FastifyRequest} from 'fastify';
 import { initializeDatabase } from './db/init';
 import {openDb} from "./db/database";
 import {changePassword, createUser} from "./Services/userService";
@@ -7,21 +6,24 @@ import {User} from "./Models/User";
 import {Event} from "./Models/Models";
 import {authenticateUser} from "./Services/authService";
 import {CustomFastifyRequest, verifyToken} from "./Middleware/verifyToken";
-import {Common} from "./Models/Models";
 import multer from 'fastify-multer';
 import {Request} from "express";
 import UploadService from "./Services/uploadService";
 import path from "path";
 import fs from "fs";
 import { addEvent } from './Services/eventsService';
-// import {addEvent} from "./Services/eventsService";
+
+import fastify from 'fastify';
+
+const server = fastify({ logger: true });
+
 const fastifyStatic = require('fastify-static');
 
 interface MulterRequest extends FastifyRequest {
     file: Request['file']; // Use the 'file' type from Express Request
 }
 const jwt = require('jsonwebtoken');
-const server = fastify({ logger: true });
+
 
 initializeDatabase();
 
