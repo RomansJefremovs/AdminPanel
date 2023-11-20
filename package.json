@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Admin Panel for website",
   "main": "src/server.ts",
+  "type": "module",
   "scripts": {
     "vercel": "vercel dev"
   },
