@@ -15,6 +15,8 @@ import path from "path";
 import fs from "fs";
 import { addEvent } from './Services/eventsService';
 // import {addEvent} from "./Services/eventsService";
+const fastifyStatic = require('fastify-static');
+
 interface MulterRequest extends FastifyRequest {
     file: Request['file']; // Use the 'file' type from Express Request
 }
@@ -24,6 +26,10 @@ const server = fastify({ logger: true });
 initializeDatabase();
 
 server.register(multer.contentParser); // register multer content parser
+// Serve static files from the '123' directory
+server.register(fastifyStatic, {
+    root: path.join(__dirname, 'public'),
+});
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage }); // configure multer with memory storage
