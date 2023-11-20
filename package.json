@@ -2,11 +2,9 @@
   "name": "adminpanel",
   "version": "1.0.0",
   "description": "Admin Panel for website",
-  "main": "server.ts",
+  "main": "src/server.ts",
   "scripts": {
-    "start": "tsc && node server.js",
-    "test": "jest",
-    "build": "tsc"
+    "vercel": "vercel dev"
   },
   "author": "",
   "license": "ISC",
