@@ -3,9 +3,10 @@ export interface Common{
     description: string;
     price: number;
     image: string;
+    eventDate: string;
 }
 export interface Event extends Common{
-    eventDate: string;
+    eventType: 'tasting'|'event'|'dish'
 }
 export interface Wine{
     country: string;
@@ -13,15 +14,6 @@ export interface Wine{
     type: string;
     year: number;
     rating: number;
+    name: string;
 }
 
-export interface WineTasting extends Common{
-    wines: Wine[];
-}
-
-export interface AddEventBody {
-    title: string;
-    description: string;
-    price: number;
-    date: string; // or Date, depending on how you handle dates
-}

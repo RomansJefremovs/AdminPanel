@@ -11,3 +11,8 @@
 /src/Tests/user.test.js
 /server.js
 .vercel
+/api
+/dist
+/.idea
+vercel.json
+/node_modules

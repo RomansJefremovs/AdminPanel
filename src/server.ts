@@ -1,43 +1,52 @@
-import {FastifyRequest} from 'fastify';
-import { initializeDatabase } from './db/init';
-import {openDb} from "./db/database";
-import {changePassword, createUser} from "./Services/userService";
+import {createClient, SupabaseClient} from "@supabase/supabase-js";
+import {loginUSer, changePassword, createUser} from "./Services/userService";
 import {User} from "./Models/User";
-import {Event} from "./Models/Models";
-import {authenticateUser} from "./Services/authService";
+import {Event, Wine} from "./Models/Models";
 import {CustomFastifyRequest, verifyToken} from "./Middleware/verifyToken";
 import multer from 'fastify-multer';
-import {Request} from "express";
 import UploadService from "./Services/uploadService";
-import path from "path";
-import fs from "fs";
-import { addEvent } from './Services/eventsService';
-
+import dotenv from 'dotenv';
 import fastify from 'fastify';
+import fs from "fs";
+import {addEvent, deleteEvent, getEvents, getTastings, getWeeklyDish} from "./Services/eventsService";
+import {addEventWine, addWine, deleteWine, getEventWines, getWine, getWines} from "./Services/wineService";
+import path from "path";
 
+dotenv.config();
 const server = fastify({ logger: true });
 
-const fastifyStatic = require('fastify-static');
-
-interface MulterRequest extends FastifyRequest {
-    file: Request['file']; // Use the 'file' type from Express Request
+// Define a type for your environment variables if needed
+interface Environment {
+    PORT: number;
 }
-const jwt = require('jsonwebtoken');
 
+// Use a helper function or direct process.env access
+const env: Environment = {
+    PORT: parseInt(process.env.PORT || '3000', 10),
+};
 
-initializeDatabase();
-
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_KEY!;
+const jwtSecret = process.env.JWT_SECRET!;
+if (!supabaseUrl || !supabaseKey || !jwtSecret) {
+    console.error('Supabase environmental variables are missing or incorrect.');
+    process.exit(1); // Exit the process if variables are missing or incorrect.
+}
+const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 server.register(multer.contentParser); // register multer content parser
-// Serve static files from the '123' directory
-server.register(fastifyStatic, {
-    root: path.join(__dirname, 'public'),
-});
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage }); // configure multer with memory storage
 
 const uploadService = new UploadService('Assets/Events');
+server.get('/', async (request, reply) => {
 
+    let { data: events, error } = await supabase
+        .from('events')
+        .select('*')
+reply.send(events);
+
+})
 server.post('/upload', { preHandler: upload.single('image') }, async (request, reply) => {
     const multerRequest = request as unknown as { file: Express.Multer.File };
     const file = multerRequest.file;
@@ -88,10 +97,11 @@ server.get<{
 server.post<{ Body: User }>('/register', async (request, reply) => {
     try {
         const { username, password, email } = request.body;
-        await createUser(username, password, email);
-        reply.send({ status: 'success', message: 'User registered successfully' });
+        console.log(username, password, email)
+        const res = await createUser(supabase,username, password, email);
+        reply.send({ status: 'success', message: 'User registered successfully' + '' + res });
     } catch (error) {
-        reply.code(500).send({ status: 'error', message: 'Error registering user' });
+        reply.code(500).send({ status: 'error', message: error });
     }
 });
 interface LoginBody {
@@ -103,7 +113,7 @@ server.post<{ Body: LoginBody }>('/login', async (request, reply) => {
     const { username, password } = request.body;
 
     try {
-        const token = await authenticateUser(username, password);
+        const token = await loginUSer(supabase,username, password, jwtSecret);
 
         if (!token) {
             reply.code(401).send({ message: 'Authentication failed' });
@@ -111,7 +121,7 @@ server.post<{ Body: LoginBody }>('/login', async (request, reply) => {
             reply.send({ token }); // Send the token in the response
         }
     } catch (error) {
-        reply.code(500).send({ message: 'Internal server error' });
+        reply.code(500).send({ message: 'Internal server error' + ' ' + error });
     }
 });
 
@@ -129,7 +139,7 @@ server.post<{ Body: { newPassword: string } }>('/edit-pswrd', { preHandler: veri
 
         // Get the new password from the request body
         const { newPassword } = request.body as { newPassword: string };
-        const passwordChanged = await changePassword(username, newPassword);
+        const passwordChanged = await changePassword(supabase,username, newPassword);
 
         if (passwordChanged) {
             reply.send({ message: 'Password updated successfully' });
@@ -143,42 +153,35 @@ server.post<{ Body: { newPassword: string } }>('/edit-pswrd', { preHandler: veri
 });
 
 
-server.post<{ Body: Event }>('/add-event', { preHandler: verifyToken }, async (request, reply) => {
+server.post<{ Body: {
+    event: Event;
+    wines?:number[];
+    }
+}>('/add-event',
+    { preHandler: verifyToken },
+    async (request, reply) => {
     try {
-        const { description, image, price, title, eventDate } = request.body;
-        const event = { title, description, price, image, eventDate }; // Create an event object
-        const res = await addEvent(event);
+        const { event,wines} = request.body;
+        // const event = { title, description, price, image, eventDate, eventType }; // Create an event object
+        const res = await addEvent(supabase,event,wines);
         reply.send({ status: 'success', message: 'Event added' });
     } catch (error) {
         reply.code(500).send({ status: 'error', message: 'Error registering event' }); // Corrected the error message
     }
 });
 
-
-server.get('/upcomingEvents', async (request, reply) => {
+server.get('/upcomingEvents',  { preHandler: verifyToken }, async (request, reply) => {
     try {
-        const db = await openDb();
-        const currentTimestamp = Date.now(); // Current Unix timestamp in milliseconds
-
-        const events = await db.all(
-            'SELECT * FROM events WHERE date > ? ORDER BY date ASC',
-            currentTimestamp
-        );
-
-        await db.close();
-
-        const validEvents = events
-            .filter(event => {
-                const eventDate = parseInt(event.date);
-                // Filter out events that have invalid dates
-                return !isNaN(eventDate) && eventDate > currentTimestamp;
-            })
-            .map(event => ({
-                ...event,
-                // Convert stored timestamps back to ISO strings
-                date: new Date(parseInt(event.date)).toISOString()
-            }));
-
+        const validEvents = await getEvents(supabase);
+        reply.send(validEvents);
+    } catch (error) {
+        console.error(error);
+        reply.code(500).send({ message: 'Error fetching upcoming events' });
+    }
+});
+server.get('/upcomingTastings',  { preHandler: verifyToken }, async (request, reply) => {
+    try {
+        const validEvents = await getTastings(supabase);
         reply.send(validEvents);
     } catch (error) {
         console.error(error);
@@ -186,10 +189,99 @@ server.get('/upcomingEvents', async (request, reply) => {
     }
 });
 
+server.get('/upcomingDish',  { preHandler: verifyToken }, async (request, reply) => {
+    try {
+        const validEvents = await getWeeklyDish(supabase);
+        reply.send(validEvents);
+    } catch (error) {
+        console.error(error);
+        reply.code(500).send({ message: 'Error fetching upcoming events' });
+    }
+});
 
+server.delete<{Params:{
+    eventId: number;
+    }}>('/deleteEvent/:eventId',{ preHandler: verifyToken }, async (request, reply) => {
+    const { eventId } = request.params;
 
+    try {
+        const response = deleteEvent(supabase,eventId);
+        reply.send(response);
+    } catch (error) {
+        console.error(error);
+        reply.code(500).send({ message: 'Error deleting event' });
+    }
+});
 
-server.listen(3000, err => {
+server.post<{ Body: Wine }>('/add-wine', { preHandler: verifyToken }, async (request, reply) => {
+    try {
+        const wine = request.body;
+        const res = await addWine(supabase,wine);
+        reply.send({ status: 'success', message: 'Wine added', res });
+    } catch (error) {
+        reply.code(500).send({ status: 'error', message: 'Error adding wine' }); // Corrected the error message
+    }
+});
+
+server.get('/get-wines',  { preHandler: verifyToken }, async (request, reply) => {
+    try {
+        const validWines = await getWines(supabase);
+        reply.send(validWines);
+    } catch (error) {
+        console.error(error);
+        reply.code(500).send({ message: 'Error fetching wines' });
+    }
+});
+
+server.get<{Params:{
+    name: string;
+    }}>('/get-wine/:name',  { preHandler: verifyToken }, async (request, reply) => {
+   try {
+         const { name } = request.params;
+         const validWine = await getWine(supabase, name);
+         reply.send(validWine);
+   }catch (e) {
+       throw new Error('Error getting wine from the database');
+   }
+});
+
+server.get<{Params:{
+    eventId: number;
+    }}>('/get-event-wines/:eventId',  { preHandler: verifyToken }, async (request, reply) => {
+    try {
+        const { eventId } = request.params;
+        const validWines = await getEventWines(supabase, eventId);
+        reply.send(validWines);
+    }catch (e) {
+        throw new Error('Error getting wine from the database');
+    }
+});
+
+server.post<{Body:{
+    eventId: number;
+    wineId: number;
+    }}>('/add-event-wine', { preHandler: verifyToken }, async (request, reply) => {
+   try {
+         const { eventId, wineId } = request.body;
+         const res = await addEventWine(supabase,eventId, wineId);
+         reply.send({ status: 'success', message: 'Event wine added' });
+   }catch (e) {
+         throw new Error('Error adding event wine to the database');
+   }
+});
+
+server.delete<{Params:{
+    wineId: number;
+    }}>('/delete-wine/:wineId', { preHandler: verifyToken }, async (request, reply) => {
+    try {
+        const { wineId } = request.params;
+        const response = await deleteWine(supabase,wineId);
+        reply.send(response);
+    } catch (error) {
+        throw new Error('Error deleting wine');
+    }
+});
+server.listen(env.PORT, err => {
     if (err) {
         server.log.error(err);
         process.exit(1);
@@ -203,3 +295,4 @@ server.listen(3000, err => {
 
 
 export default server;
+

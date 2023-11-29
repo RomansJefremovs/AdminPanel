@@ -1,61 +1,83 @@
-import bcrypt from 'bcrypt';
-import {openDb} from "../db/database";
-import {User} from "../Models/User";
+import jwt from "jsonwebtoken";
+import { SupabaseClient } from "@supabase/supabase-js";
+import bcrypt from "bcrypt";
 
-export const createUser = async (username: string, password: string, email?: string): Promise<void> => {
-    const db = await openDb();
-    const hashedPassword = await bcrypt.hash(password, 10);
+export const createUser = async (supabase: SupabaseClient, username: string, password: string, email?: string) => {
+    const hashedPassword: string = await bcrypt.hash(password, 10);
 
-    await db.run('INSERT INTO users (username, password, email) VALUES (?, ?, ?)', [username, hashedPassword, email]);
+    const { data, error } = await supabase
+        .from('users')
+        .insert([
+            { username: username, password: hashedPassword },
+        ])
+        .select()
+
+    if (error) {
+        console.error('Error creating user:', error);
+        return null;
+    }
+    return data ? data[0] : null;
 };
 
-// Import necessary modules and dependencies
-async function getUserByUsernameFromDb(username: string): Promise<User | null> {
-    try {
-        const db = await openDb(); // Open the SQLite database
-        const user = await db.get('SELECT * FROM users WHERE username = ?', username);
-        await db.close();
-        return user || null;
-    } catch (error) {
-        throw new Error('Error fetching user from the database');
+export const getUserByUsernameFromDb = async (supabase: SupabaseClient, username: string) => {
+    const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', username)
+        .single();
+
+    if (error) {
+        console.error('Error fetching user:', error);
+        return null;
     }
-}
-// Function to change the user's password
-// export async function changePassword(username: string, currentPassword: string, newPassword: string): Promise<boolean> {
-//     try {
-//         // Retrieve the user from the database
-//         const user = await getUserByUsernameFromDb(username);
-//
-//         // Check if the user exists and the current password is correct
-//         if (!user || !bcrypt.compareSync(currentPassword, user.hashedPassword)) {
-//             return false; // Password change failed
-//         }
-//
-//         // Hash and update the new password
-//         const hashedNewPassword = bcrypt.hashSync(newPassword, 10);
-//         // Update the user's password in the database (replace with your database logic)
-//         // Example: await updateUserPassword(username, hashedNewPassword);
-//
-//         return true; // Password change successful
-//     } catch (error) {
-//         throw new Error('Error changing password');
-//     }
-// }
+    return data;
+};
 
+export const changePassword = async (supabase: SupabaseClient, username: string, newPassword: string) => {
+    const hashedPassword: string = await bcrypt.hash(newPassword, 10);
 
-// Function to change the user's password
-export async function changePassword(username: string, newPassword: string): Promise<boolean> {
-    try {
-        // Hash the new password before storing it in the database
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const { error } = await supabase
+        .from('users')
+        .update({ password: hashedPassword })
+        .eq('username', username);
 
-        // Update the user's password in the database
-        const db = await openDb();
-        await db.run('UPDATE users SET password = ? WHERE username = ?', hashedPassword, username);
-        await db.close();
-
-        return true; // Password updated successfully
-    } catch (error) {
-        throw new Error('Error changing password');
+    if (error) {
+        console.error('Error changing password:', error);
+        return false;
     }
+    return true;
+};
+
+function generateToken(username: string,jwtSecret:string): string {
+    return jwt.sign({ username }, jwtSecret, { expiresIn: '1h' });
 }
+
+export const loginUSer = async (supabase: SupabaseClient, username: string, password: string, jwtSecret: string) => {
+    try {
+        // Query the Supabase table for the user
+        const { data: users, error } = await supabase
+            .from('users')
+            .select('username, password')
+            .eq('username', username)
+            .single();
+
+        if (error || !users || !bcrypt.compareSync(password, users.password)) {
+            return null; // Authentication failed
+        }
+
+
+        const token = generateToken(username, jwtSecret);
+        // If authentication is successful, generate a JWT token
+        console.log('users', users, 'error', error, 'password', password, 'username', username,token)
+        return token;
+    } catch (error) {
+        console.error('Error authenticating user:', error);
+        return null;
+    }
+};
+
+
+
+
+
+

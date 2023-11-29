@@ -1,11 +1,17 @@
 import {FastifyReply, FastifyRequest, HookHandlerDoneFunction} from "fastify";
 import jwt, {Secret} from "jsonwebtoken";
-
+import dotenv from "dotenv";
+dotenv.config();
 export interface CustomFastifyRequest extends FastifyRequest {
     user?: { username: string }; // We make user property optional here
 }
 
-const jwtSecret: Secret = process.env.JWT_SECRET || 'your-secret-key';
+const jwtSecret: Secret = process.env.JWT_SECRET!;
+
+if ( !jwtSecret) {
+    console.error('secret incorrect.');
+    process.exit(1); // Exit the process if variables are missing or incorrect.
+}
 
 // Middleware to verify JWT token
 export function verifyToken(request: CustomFastifyRequest, reply: FastifyReply, done: HookHandlerDoneFunction): void {
