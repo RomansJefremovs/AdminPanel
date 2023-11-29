@@ -20,6 +20,7 @@ interface Environment {
     PORT: number;
 }
 
+
 // Use a helper function or direct process.env access
 const env: Environment = {
     PORT: parseInt(process.env.PORT || '8080', 10),
