@@ -284,13 +284,13 @@ server.delete<{Params:{
 server.listen(env.PORT, err => {
     if (err) {
 
-        server.log.info(err);
+        // server.log.info(err);
         process.exit(1);
     }
 
     const address = server.server.address();
     const port = address && typeof address === 'object' ? address.port : 'unknown';
-    server.log.info(`server listening on port ${port}`);
+    // server.log.info(`server listening on port ${port}`);
 });
 
 
