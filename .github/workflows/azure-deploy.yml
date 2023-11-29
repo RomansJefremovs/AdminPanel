@@ -2,8 +2,8 @@ name: Deploy to Azure WebApp
 
 on:
   push:
-    branches: [ $default-branch ]
-  workflow_dispatch:
+    branches:
+      - master  # or your default branch
 
 env:
   AZURE_WEBAPP_NAME: AdminPanelVinebar   # set this to your application's name
