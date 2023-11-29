@@ -1,0 +1,35 @@
+name: Deploy to Azure WebApp
+
+on:
+  push:
+    branches:
+      - master  # or your default branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20.x'  # Make sure this matches the runtime stack on Azure
+
+      - name: npm install, build, and test
+        run: |
+          npm install
+          npm run build
+          npm run test
+
+      - name: 'Login via Azure CLI'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: 'Deploy to Azure WebApp'
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'AdminPanelVinebar'  # Make sure this matches the name of your WebApp on Azure
+          package: 'dist'  # This should point to the build output directory if not the root
