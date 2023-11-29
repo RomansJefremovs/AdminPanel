@@ -32,4 +32,4 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: 'AdminPanelVinebar'  # Make sure this matches the name of your WebApp on Azure
-          package: 'dist'  # This should point to the build output directory if not the root
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }} # This should point to the build output directory if not the root
