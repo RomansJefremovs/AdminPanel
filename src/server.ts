@@ -22,7 +22,7 @@ interface Environment {
 
 // Use a helper function or direct process.env access
 const env: Environment = {
-    PORT: parseInt(process.env.PORT || '3000', 10),
+    PORT: parseInt(process.env.PORT || '8080', 10),
 };
 
 const supabaseUrl = process.env.SUPABASE_URL!;
