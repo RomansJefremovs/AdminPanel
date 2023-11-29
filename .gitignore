@@ -9,7 +9,7 @@
 /src/Services/uploadService.js
 /src/Services/userService.js
 /src/Tests/user.test.js
-/server.js
+/src/server.js
 .vercel
 /api
 /dist
