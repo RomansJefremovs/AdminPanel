@@ -283,7 +283,7 @@ server.delete<{Params:{
 });
 server.listen(env.PORT, err => {
     if (err) {
-        server.log.error(err);
+        server.log.info(err);
         process.exit(1);
     }
 
