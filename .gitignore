@@ -12,7 +12,6 @@
 /src/server.js
 .vercel
 /api
-/dist
 /.idea
 vercel.json
 /node_modules
