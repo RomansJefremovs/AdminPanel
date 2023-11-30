@@ -37,11 +37,20 @@ jobs:
           name: node-app
           path: .
 
+  login-to-azure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Login via Azure CLI'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
   deploy:
     permissions:
       contents: none
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, login-to-azure]  # Ensure the 'login-to-azure' job runs before 'deploy'
+
     environment:
       name: 'Development'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
