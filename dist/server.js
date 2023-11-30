@@ -236,7 +236,7 @@ server.delete('/delete-wine/:wineId', { preHandler: verifyToken_1.verifyToken },
         throw new Error('Error deleting wine');
     }
 });
-server.listen(env.PORT, err => {
+server.listen({ port: env.PORT }, err => {
     if (err) {
         // server.log.info(err);
         process.exit(1);

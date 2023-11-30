@@ -282,7 +282,7 @@ server.delete<{Params:{
         throw new Error('Error deleting wine');
     }
 });
-server.listen(env.PORT, err => {
+server.listen({ port: env.PORT }, err => {
     if (err) {
 
         // server.log.info(err);
