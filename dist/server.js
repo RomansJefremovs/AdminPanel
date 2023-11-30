@@ -33,10 +33,7 @@ const storage = fastify_multer_1.default.memoryStorage();
 const upload = (0, fastify_multer_1.default)({ storage }); // configure multer with memory storage
 const uploadService = new uploadService_1.default('Assets/Events');
 server.get('/', async (request, reply) => {
-    let { data: events, error } = await supabase
-        .from('events')
-        .select('*');
-    reply.send(events);
+    reply.send('pong');
 });
 server.post('/upload', { preHandler: upload.single('image') }, async (request, reply) => {
     const multerRequest = request;

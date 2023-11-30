@@ -41,11 +41,7 @@ const upload = multer({ storage }); // configure multer with memory storage
 
 const uploadService = new UploadService('Assets/Events');
 server.get('/', async (request, reply) => {
-
-    let { data: events, error } = await supabase
-        .from('events')
-        .select('*')
-reply.send(events);
+reply.send('pong');
 
 })
 server.post('/upload', { preHandler: upload.single('image') }, async (request, reply) => {
