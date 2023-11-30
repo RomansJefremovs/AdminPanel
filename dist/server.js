@@ -233,13 +233,23 @@ server.delete('/delete-wine/:wineId', { preHandler: verifyToken_1.verifyToken },
         throw new Error('Error deleting wine');
     }
 });
-server.listen({ port: env.PORT }, err => {
+server.listen({ port: env.PORT, host: '0.0.0.0' }, err => {
     if (err) {
-        // server.log.info(err);
+        console.error(err);
         process.exit(1);
     }
-    const address = server.server.address();
-    const port = address && typeof address === 'object' ? address.port : 'unknown';
-    // server.log.info(`server listening on port ${port}`);
+    // You can also log that the server was started here (optional)
+    console.log(`Server listening on port ${env.PORT}`);
 });
+// server.listen({ port: env.PORT}, err => {
+//     if (err) {
+//
+//         // server.log.info(err);
+//         process.exit(1);
+//     }
+//
+//     const address = server.server.address();
+//     const port = address && typeof address === 'object' ? address.port : 'unknown';
+//     // server.log.info(`server listening on port ${port}`);
+// });
 exports.default = server;
