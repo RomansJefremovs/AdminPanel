@@ -36,6 +36,8 @@ async function getEvents(supabase) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'event');
+        if (error)
+            return error;
         return data;
     }
     catch (error) {
@@ -50,6 +52,8 @@ async function getTastings(supabase) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'tasting');
+        if (error)
+            return error;
         return data;
     }
     catch (error) {

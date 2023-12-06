@@ -40,6 +40,8 @@ export async function getEvents(supabase: SupabaseClient) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'event')
+        if (error)return error
+
         return data;
     } catch (error) {
         throw new Error('Error getting events from the database');
@@ -52,6 +54,8 @@ export async function getTastings(supabase: SupabaseClient) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'tasting')
+
+        if (error) return error
         return data;
     } catch (error) {
         throw new Error('Error getting events from the database');
