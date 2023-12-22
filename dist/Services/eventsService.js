@@ -77,7 +77,11 @@ async function getTastings(supabase) {
                     .eq('event', event.id);
                 return formatEvent(event, wine);
             }));
-            return wineData;
+            return wineData.sort((a, b) => {
+                const dateA = new Date(a.event.date);
+                const dateB = new Date(b.event.date);
+                return dateA.getTime() - dateB.getTime();
+            }).slice(0, 1);
         }
         else
             return data;

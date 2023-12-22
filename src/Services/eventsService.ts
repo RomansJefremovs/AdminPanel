@@ -74,8 +74,13 @@ export async function getTastings(supabase: SupabaseClient) {
                     .eq('event', event.id)
                 return formatEvent(event, wine)
             }))
-            return wineData
-        }else return data;
+            return wineData.sort((a, b) => {
+                    const dateA = new Date(a.event.date);
+                    const dateB = new Date(b.event.date);
+                    return dateA.getTime() - dateB.getTime();
+                }).slice(0, 1);
+
+            }else return data;
     } catch (error) {
         return null
         // throw new Error('Error getting events from the database');
