@@ -240,7 +240,7 @@ server.get('/allWeeklyWine',  { preHandler: verifyToken }, async (request, reply
 
 
 //UPCOMING
-server.get('/upcomingEvents',  { preHandler: verifyToken }, async (request, reply) => {
+server.get('/upcomingEvents', async (request, reply) => {
     try {
         const validEvents = await getEvents(supabase);
         reply.send(validEvents);
@@ -249,7 +249,7 @@ server.get('/upcomingEvents',  { preHandler: verifyToken }, async (request, repl
         reply.code(500).send({ message: 'Error fetching upcoming events' });
     }
 });
-server.get('/upcomingTastings',  { preHandler: verifyToken }, async (request, reply) => {
+server.get('/upcomingTastings', async (request, reply) => {
     try {
         const validEvents = await getTastings(supabase);
         reply.send(validEvents);
@@ -260,7 +260,7 @@ server.get('/upcomingTastings',  { preHandler: verifyToken }, async (request, re
     }
 });
 
-server.get('/upcomingDish',  { preHandler: verifyToken }, async (request, reply) => {
+server.get('/upcomingDish',  async (request, reply) => {
     try {
         const validEvents = await geUpcomingtWeeklyDish(supabase);
         reply.send(validEvents);
@@ -269,7 +269,7 @@ server.get('/upcomingDish',  { preHandler: verifyToken }, async (request, reply)
         reply.code(500).send({ message: 'Error fetching upcoming events' });
     }
 });
-server.get('/upcomingWine',  { preHandler: verifyToken }, async (request, reply) => {
+server.get('/upcomingWine', async (request, reply) => {
     try {
         const validEvents = await geUpcomingWeeklyWine(supabase);
         reply.send(validEvents);
