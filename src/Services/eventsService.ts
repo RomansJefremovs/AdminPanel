@@ -1,5 +1,5 @@
 // eventService.ts
-import {Event} from '../Models/Models';
+import {Event, Wine} from '../Models/Models';
 import {SupabaseClient} from "@supabase/supabase-js";
 
 export async function addEvent(supabase: SupabaseClient, event: Event) {
@@ -19,6 +19,8 @@ export async function addEvent(supabase: SupabaseClient, event: Event) {
     }
 }
 
+
+
 export async function getEvents(supabase: SupabaseClient) {
     try {
         const { data, error } = await supabase
@@ -26,9 +28,15 @@ export async function getEvents(supabase: SupabaseClient) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'event')
-        if (error)return error
+        // if (error)return error
+        if (data!==null){
+            return data.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return dateA.getTime() - dateB.getTime();
+            }).slice(0, 3);
 
-        return data;
+        }else return data;
     } catch (error) {
         // throw new Error('Error getting events from the database');
     }
@@ -44,6 +52,12 @@ export async function getAllEvents(supabase: SupabaseClient) {
         // throw new Error('Error getting events from the database');
     }
 }
+const formatEvent = (event: Event,wine:Wine[]|null) => {
+    return{
+        event:event,
+        wines:wine
+    }
+}
 export async function getTastings(supabase: SupabaseClient) {
     try {
         const { data, error } = await supabase
@@ -51,7 +65,17 @@ export async function getTastings(supabase: SupabaseClient) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'tasting')
-        return data;
+
+        if (data!==null){
+            const wineData = await Promise.all(data.map(async (event: Event) => {
+                const { data: wine, error } = await supabase
+                    .from('wines')
+                    .select('*')
+                    .eq('event', event.id)
+                return formatEvent(event, wine)
+            }))
+            return wineData
+        }else return data;
     } catch (error) {
         return null
         // throw new Error('Error getting events from the database');
@@ -123,7 +147,16 @@ export async function geUpcomingtWeeklyDish(supabase: SupabaseClient) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'dish')
-        return data;
+
+        if (data!==null){
+            return data.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return dateA.getTime() - dateB.getTime();
+            }).slice(0, 1);
+
+        }else return data;
+
     } catch (error) {
         // throw new Error('Error getting events from the database');
     }
@@ -135,7 +168,14 @@ export async function geUpcomingWeeklyWine(supabase: SupabaseClient) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'wine')
-        return data;
+        if (data!==null){
+            return data.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return dateA.getTime() - dateB.getTime();
+            }).slice(0, 1);
+
+        }else return data;
     } catch (error) {
         return null
         // throw new Error('Error getting events from the database');

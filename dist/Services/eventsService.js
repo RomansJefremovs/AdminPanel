@@ -26,9 +26,16 @@ async function getEvents(supabase) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'event');
-        if (error)
-            return error;
-        return data;
+        // if (error)return error
+        if (data !== null) {
+            return data.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return dateA.getTime() - dateB.getTime();
+            }).slice(0, 3);
+        }
+        else
+            return data;
     }
     catch (error) {
         // throw new Error('Error getting events from the database');
@@ -49,6 +56,12 @@ async function getAllEvents(supabase) {
     }
 }
 exports.getAllEvents = getAllEvents;
+const formatEvent = (event, wine) => {
+    return {
+        event: event,
+        wines: wine
+    };
+};
 async function getTastings(supabase) {
     try {
         const { data, error } = await supabase
@@ -56,7 +69,18 @@ async function getTastings(supabase) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'tasting');
-        return data;
+        if (data !== null) {
+            const wineData = await Promise.all(data.map(async (event) => {
+                const { data: wine, error } = await supabase
+                    .from('wines')
+                    .select('*')
+                    .eq('event', event.id);
+                return formatEvent(event, wine);
+            }));
+            return wineData;
+        }
+        else
+            return data;
     }
     catch (error) {
         return null;
@@ -137,7 +161,15 @@ async function geUpcomingtWeeklyDish(supabase) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'dish');
-        return data;
+        if (data !== null) {
+            return data.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return dateA.getTime() - dateB.getTime();
+            }).slice(0, 1);
+        }
+        else
+            return data;
     }
     catch (error) {
         // throw new Error('Error getting events from the database');
@@ -151,7 +183,15 @@ async function geUpcomingWeeklyWine(supabase) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'wine');
-        return data;
+        if (data !== null) {
+            return data.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return dateA.getTime() - dateB.getTime();
+            }).slice(0, 1);
+        }
+        else
+            return data;
     }
     catch (error) {
         return null;
