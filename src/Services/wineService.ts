@@ -16,12 +16,39 @@ export async function addWine(supabase: SupabaseClient, wine: Wine) {
         throw new Error('Error adding event to the database');
     }
 }
+export async function addWines(supabase: SupabaseClient, wines: Wine[]) {
+    console.log(wines)
+    console.log(wines[0].country)
+    // const wineData = wines.map(wine => {
+    //     return  { country: wine.country, region: wine.region, type: wine.type, year: wine.year, rating: wine.rating, name: wine.name }
+    // })
+    try {
+        const { data, error } = await supabase
+            .from('wines')
+            .insert(wines).select();
 
+        if (error) throw new Error(`Error adding wines: ${error.message}`);
+        return data; // Data should be the array of added wines
+    } catch (error) {
+        console.error('Error in addWines:', error);
+        throw error; // Propagate the error for the caller to handle
+    }
+}
 export async function getWines(supabase: SupabaseClient) {
     try {
         const { data, error } = await supabase
             .from('wines')
             .select('*')
+        return data;
+    } catch (error) {
+        throw new Error('Error getting wines from the database');
+    }
+}
+export async function getWinesByEvent(supabase: SupabaseClient,eventId:number) {
+    try {
+        const { data, error } = await supabase
+            .from('wines')
+            .select('*').eq('event',eventId)
         return data;
     } catch (error) {
         throw new Error('Error getting wines from the database');

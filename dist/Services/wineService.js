@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteWine = exports.getEventWines = exports.addEventWine = exports.getWine = exports.getWines = exports.addWine = void 0;
+exports.deleteWine = exports.getEventWines = exports.addEventWine = exports.getWine = exports.getWinesByEvent = exports.getWines = exports.addWines = exports.addWine = void 0;
 // Function to add an event to the database
 async function addWine(supabase, wine) {
     try {
@@ -17,6 +17,26 @@ async function addWine(supabase, wine) {
     }
 }
 exports.addWine = addWine;
+async function addWines(supabase, wines) {
+    console.log(wines);
+    console.log(wines[0].country);
+    // const wineData = wines.map(wine => {
+    //     return  { country: wine.country, region: wine.region, type: wine.type, year: wine.year, rating: wine.rating, name: wine.name }
+    // })
+    try {
+        const { data, error } = await supabase
+            .from('wines')
+            .insert(wines).select();
+        if (error)
+            throw new Error(`Error adding wines: ${error.message}`);
+        return data; // Data should be the array of added wines
+    }
+    catch (error) {
+        console.error('Error in addWines:', error);
+        throw error; // Propagate the error for the caller to handle
+    }
+}
+exports.addWines = addWines;
 async function getWines(supabase) {
     try {
         const { data, error } = await supabase
@@ -29,6 +49,18 @@ async function getWines(supabase) {
     }
 }
 exports.getWines = getWines;
+async function getWinesByEvent(supabase, eventId) {
+    try {
+        const { data, error } = await supabase
+            .from('wines')
+            .select('*').eq('event', eventId);
+        return data;
+    }
+    catch (error) {
+        throw new Error('Error getting wines from the database');
+    }
+}
+exports.getWinesByEvent = getWinesByEvent;
 async function getWine(supabase, name) {
     try {
         const { data, error } = await supabase

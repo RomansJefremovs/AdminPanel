@@ -10,10 +10,8 @@ const jwtSecret: Secret = process.env.JWT_SECRET!;
 
 if ( !jwtSecret) {
     console.error('secret incorrect.');
-    process.exit(1); // Exit the process if variables are missing or incorrect.
+    process.exit(1);
 }
-
-// Middleware to verify JWT token
 export function verifyToken(request: CustomFastifyRequest, reply: FastifyReply, done: HookHandlerDoneFunction): void {
     const authHeader: string | undefined = request.headers['authorization'];
     const token: string | undefined = authHeader && authHeader.split(' ')[1];
@@ -28,7 +26,7 @@ export function verifyToken(request: CustomFastifyRequest, reply: FastifyReply, 
             reply.code(403).send({ message: 'Token expired or invalid' });
             return;
         }
-        request.user = user as { username: string }; // Assign the user object to request.user
+        request.user = user as { username: string };
         done();
     });
 }

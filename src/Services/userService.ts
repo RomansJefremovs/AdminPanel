@@ -4,7 +4,6 @@ import bcrypt from "bcrypt";
 
 export const createUser = async (supabase: SupabaseClient, username: string, password: string, email?: string) => {
     const hashedPassword: string = await bcrypt.hash(password, 10);
-
     const { data, error } = await supabase
         .from('users')
         .insert([
@@ -54,20 +53,15 @@ function generateToken(username: string,jwtSecret:string): string {
 
 export const loginUSer = async (supabase: SupabaseClient, username: string, password: string, jwtSecret: string) => {
     try {
-        // Query the Supabase table for the user
         const { data: users, error } = await supabase
             .from('users')
             .select('username, password')
             .eq('username', username)
             .single();
-
         if (error || !users || !bcrypt.compareSync(password, users.password)) {
-            return null; // Authentication failed
+            return null;
         }
-
-
         const token = generateToken(username, jwtSecret);
-        // If authentication is successful, generate a JWT token
         console.log('users', users, 'error', error, 'password', password, 'username', username,token)
         return token;
     } catch (error) {

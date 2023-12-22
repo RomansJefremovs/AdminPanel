@@ -52,17 +52,15 @@ function generateToken(username, jwtSecret) {
 }
 const loginUSer = async (supabase, username, password, jwtSecret) => {
     try {
-        // Query the Supabase table for the user
         const { data: users, error } = await supabase
             .from('users')
             .select('username, password')
             .eq('username', username)
             .single();
         if (error || !users || !bcrypt_1.default.compareSync(password, users.password)) {
-            return null; // Authentication failed
+            return null;
         }
         const token = generateToken(username, jwtSecret);
-        // If authentication is successful, generate a JWT token
         console.log('users', users, 'error', error, 'password', password, 'username', username, token);
         return token;
     }

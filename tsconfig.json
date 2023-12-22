@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist", // Output directory for compiled files
-    "typeRoots": ["./src/@types", "./node_modules/@types"]
+    "typeRoots": ["./src/@types", "./node_modules/@types","./@types"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "**/*.spec.ts"]

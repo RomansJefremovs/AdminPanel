@@ -10,9 +10,8 @@ dotenv_1.default.config();
 const jwtSecret = process.env.JWT_SECRET;
 if (!jwtSecret) {
     console.error('secret incorrect.');
-    process.exit(1); // Exit the process if variables are missing or incorrect.
+    process.exit(1);
 }
-// Middleware to verify JWT token
 function verifyToken(request, reply, done) {
     const authHeader = request.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -25,7 +24,7 @@ function verifyToken(request, reply, done) {
             reply.code(403).send({ message: 'Token expired or invalid' });
             return;
         }
-        request.user = user; // Assign the user object to request.user
+        request.user = user;
         done();
     });
 }
