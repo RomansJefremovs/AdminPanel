@@ -2,9 +2,6 @@
 import {Event} from '../Models/Models';
 import {SupabaseClient} from "@supabase/supabase-js";
 
-interface EventQueryModel extends Event{
-    id: number;
-}
 export async function addEvent(supabase: SupabaseClient, event: Event) {
     try {
         const { data:eventData, error } = await supabase
@@ -54,9 +51,9 @@ export async function getTastings(supabase: SupabaseClient) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'tasting')
-        if (error) return error
         return data;
     } catch (error) {
+        return null
         // throw new Error('Error getting events from the database');
     }
 }
@@ -73,37 +70,15 @@ export async function getAllTastings(supabase: SupabaseClient) {
         // throw new Error('Error getting events from the database');
     }
 }
-export async function getTastingByName(supabase: SupabaseClient, name: string) {
-    try {
-        const { data, error } = await supabase
-            .from('events')
-            .select('*')
-            // .gt('date', new Date().toISOString())
-            .eq('event_type', 'tasting').eq('title',name)
-        if (error) return error
-        return data;
-    } catch (error) {
-        // throw new Error('Error getting events from the database');
-    }
-}
 export async function deleteEvent(supabase: SupabaseClient, eventId:number) {
     try {
         const { data, error } = await supabase
-            .from('events')
-            .select('event_type')
-            .eq('id', eventId)
-            .single();
+            .from('wines')
+            .delete()
+            .eq('event', eventId)
 
         if (error) return  error;
 
-        if (data.event_type === 'tasting') {
-            const { error: deleteError } = await supabase
-                .from('eventwines')
-                .delete()
-                .eq('eventid', eventId);
-
-            if (deleteError) return  deleteError;
-        }
         const {data:deletedEventData, error: deleteEventError } = await supabase
             .from('events')
             .delete()
@@ -150,6 +125,19 @@ export async function geUpcomingtWeeklyDish(supabase: SupabaseClient) {
             .eq('event_type', 'dish')
         return data;
     } catch (error) {
+        // throw new Error('Error getting events from the database');
+    }
+}
+export async function geUpcomingWeeklyWine(supabase: SupabaseClient) {
+    try {
+        const { data, error } = await supabase
+            .from('events')
+            .select('*')
+            .gt('date', new Date().toISOString())
+            .eq('event_type', 'wine')
+        return data;
+    } catch (error) {
+        return null
         // throw new Error('Error getting events from the database');
     }
 }

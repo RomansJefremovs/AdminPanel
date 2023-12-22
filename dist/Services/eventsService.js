@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.geUpcomingtWeeklyDish = exports.getWeeklyWine = exports.getWeeklyDish = exports.deleteEvent = exports.getTastingByName = exports.getAllTastings = exports.getTastings = exports.getAllEvents = exports.getEvents = exports.addEvent = void 0;
+exports.geUpcomingWeeklyWine = exports.geUpcomingtWeeklyDish = exports.getWeeklyWine = exports.getWeeklyDish = exports.deleteEvent = exports.getAllTastings = exports.getTastings = exports.getAllEvents = exports.getEvents = exports.addEvent = void 0;
 async function addEvent(supabase, event) {
     try {
         const { data: eventData, error } = await supabase
@@ -56,11 +56,10 @@ async function getTastings(supabase) {
             .select('*')
             .gt('date', new Date().toISOString())
             .eq('event_type', 'tasting');
-        if (error)
-            return error;
         return data;
     }
     catch (error) {
+        return null;
         // throw new Error('Error getting events from the database');
     }
 }
@@ -81,39 +80,14 @@ async function getAllTastings(supabase) {
     }
 }
 exports.getAllTastings = getAllTastings;
-async function getTastingByName(supabase, name) {
-    try {
-        const { data, error } = await supabase
-            .from('events')
-            .select('*')
-            // .gt('date', new Date().toISOString())
-            .eq('event_type', 'tasting').eq('title', name);
-        if (error)
-            return error;
-        return data;
-    }
-    catch (error) {
-        // throw new Error('Error getting events from the database');
-    }
-}
-exports.getTastingByName = getTastingByName;
 async function deleteEvent(supabase, eventId) {
     try {
         const { data, error } = await supabase
-            .from('events')
-            .select('event_type')
-            .eq('id', eventId)
-            .single();
+            .from('wines')
+            .delete()
+            .eq('event', eventId);
         if (error)
             return error;
-        if (data.event_type === 'tasting') {
-            const { error: deleteError } = await supabase
-                .from('eventwines')
-                .delete()
-                .eq('eventid', eventId);
-            if (deleteError)
-                return deleteError;
-        }
         const { data: deletedEventData, error: deleteEventError } = await supabase
             .from('events')
             .delete()
@@ -170,3 +144,18 @@ async function geUpcomingtWeeklyDish(supabase) {
     }
 }
 exports.geUpcomingtWeeklyDish = geUpcomingtWeeklyDish;
+async function geUpcomingWeeklyWine(supabase) {
+    try {
+        const { data, error } = await supabase
+            .from('events')
+            .select('*')
+            .gt('date', new Date().toISOString())
+            .eq('event_type', 'wine');
+        return data;
+    }
+    catch (error) {
+        return null;
+        // throw new Error('Error getting events from the database');
+    }
+}
+exports.geUpcomingWeeklyWine = geUpcomingWeeklyWine;

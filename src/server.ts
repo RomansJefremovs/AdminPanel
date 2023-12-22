@@ -1,8 +1,8 @@
 import {createClient, SupabaseClient} from "@supabase/supabase-js";
-import {loginUSer, changePassword, createUser} from "./Services/userService";
+import {loginUSer, createUser} from "./Services/userService";
 import {User} from "./Models/User";
 import {Event, Wine} from "./Models/Models";
-import {CustomFastifyRequest, verifyToken} from "./Middleware/verifyToken";
+import {verifyToken} from "./Middleware/verifyToken";
 import multer from 'fastify-multer';
 import UploadService from "./Services/uploadService";
 import dotenv from 'dotenv';
@@ -15,16 +15,10 @@ import {
     getEvents,
     getTastings,
     getWeeklyDish, getWeeklyWine,
-    geUpcomingtWeeklyDish
+    geUpcomingtWeeklyDish, geUpcomingWeeklyWine
 } from "./Services/eventsService";
 import {
-    addEventWine,
-    addWine,
     addWines,
-    deleteWine,
-    getEventWines,
-    getWine,
-    getWines,
     getWinesByEvent
 } from "./Services/wineService";
 import path from "path";
@@ -48,22 +42,35 @@ if (!supabaseUrl || !supabaseKey || !jwtSecret) {
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 server.register(multer.contentParser);
 server.addHook('onRequest', (request, reply, done) => {
+    const allowedOrigins = ['https://vinbar.vercel.app','https://vinbar-romansjefremovs.vercel.app/','https://vinbar-git-master-romansjefremovs.vercel.app/', 'https://biovinbar.dk'];
+    const origin = request.headers.origin;
+
+    if (origin && allowedOrigins.includes(origin)) {
+        reply.header('Access-Control-Allow-Origin', origin);
+    }
     reply
-        .header('Access-Control-Allow-Origin', '*') // or specify your frontend domain
         .header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        .header('Access-Control-Allow-Headers', 'Content-Type, Authorization') // Include Authorization
+        .header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         .header('Access-Control-Allow-Credentials', true);
+
     done();
 });
 
 server.options('*', (request, reply) => {
+    const allowedOrigins = ['https://vinbar.vercel.app','https://vinbar-romansjefremovs.vercel.app/','https://vinbar-git-master-romansjefremovs.vercel.app/', 'https://biovinbar.dk'];
+    const origin = request.headers.origin;
+
+    if (origin && allowedOrigins.includes(origin)) {
+        reply.header('Access-Control-Allow-Origin', origin);
+    }
+
     reply
-        .header('Access-Control-Allow-Origin', '*') // or specify your frontend domain
         .header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        .header('Access-Control-Allow-Headers', 'Content-Type, Authorization') // Include Authorization
+        .header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         .header('Access-Control-Allow-Credentials', true)
         .send();
 });
+
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -115,9 +122,8 @@ server.get<{
 
 server.post<{ Body: User }>('/register', async (request, reply) => {
     try {
-        const { username, password, email } = request.body;
-        console.log(username, password, email)
-        const res = await createUser(supabase,username, password, email);
+        const { username, password } = request.body;
+        const res = await createUser(supabase,username, password);
         reply.send({ status: 'success', message: 'User registered successfully' + '' + res });
     } catch (error) {
         reply.code(500).send({ status: 'error', message: error });
@@ -144,31 +150,16 @@ server.post<{ Body: LoginBody }>('/login', async (request, reply) => {
     }
 });
 
-// Import necessary modules and dependencies
-
-server.post<{ Body: { newPassword: string } }>('/edit-pswrd', { preHandler: verifyToken }, async (request: CustomFastifyRequest, reply) => {
-    try {
-        const username = request.user?.username;
-
-        if (!username) {
-            reply.code(401).send({ message: 'Unauthorized' });
-            return;
-        }
-        const { newPassword } = request.body as { newPassword: string };
-        const passwordChanged = await changePassword(supabase,username, newPassword);
-
-        if (passwordChanged) {
-            reply.send({ message: 'Password updated successfully' });
-        } else {
-            reply.code(500).send({ message: 'Error updating password' });
-        }
-    } catch (error) {
-        // Handle any errors that occur during the password update process
-        reply.code(500).send({ message: 'Error updating password' });
-    }
-});
 
 
+
+
+
+
+
+
+
+//EVENTS
 server.post<{ Body: {
     event: Event;
     }
@@ -187,29 +178,23 @@ server.post<{ Body: {
         reply.code(500).send({ status: 'error', message: 'Error registering event' });
     }
 });
+server.delete<{Params:{
+        eventId: number;
+    }}>('/deleteEvent/:eventId',{ preHandler: verifyToken }, async (request, reply) => {
+    const { eventId } = request.params;
+
+    try {
+        const response = deleteEvent(supabase,eventId);
+        reply.send(response);
+    } catch (error) {
+        console.error(error);
+        reply.code(500).send({ message: 'Error deleting event' });
+    }
+});
 server.get('/allEvents',  { preHandler: verifyToken }, async (request, reply) => {
     try {
         const validEvents = await getAllEvents(supabase);
         reply.send(validEvents);
-    } catch (error) {
-        console.error(error);
-        reply.code(500).send({ message: 'Error fetching upcoming events' });
-    }
-});
-server.get('/upcomingEvents',  { preHandler: verifyToken }, async (request, reply) => {
-    try {
-        const validEvents = await getEvents(supabase);
-        reply.send(validEvents);
-    } catch (error) {
-        console.error(error);
-        reply.code(500).send({ message: 'Error fetching upcoming events' });
-    }
-});
-server.get('/upcomingTastings',  { preHandler: verifyToken }, async (request, reply) => {
-    try {
-        const validEvents = await getTastings(supabase);
-        reply.send(validEvents);
-
     } catch (error) {
         console.error(error);
         reply.code(500).send({ message: 'Error fetching upcoming events' });
@@ -220,15 +205,6 @@ server.get('/allTastings',  { preHandler: verifyToken }, async (request, reply) 
         const validEvents = await getAllTastings(supabase);
         reply.send(validEvents);
 
-    } catch (error) {
-        console.error(error);
-        reply.code(500).send({ message: 'Error fetching upcoming events' });
-    }
-});
-server.get('/upcomingDish',  { preHandler: verifyToken }, async (request, reply) => {
-    try {
-        const validEvents = await geUpcomingtWeeklyDish(supabase);
-        reply.send(validEvents);
     } catch (error) {
         console.error(error);
         reply.code(500).send({ message: 'Error fetching upcoming events' });
@@ -253,29 +229,68 @@ server.get('/allWeeklyWine',  { preHandler: verifyToken }, async (request, reply
     }
 });
 
-server.delete<{Params:{
-    eventId: number;
-    }}>('/deleteEvent/:eventId',{ preHandler: verifyToken }, async (request, reply) => {
-    const { eventId } = request.params;
 
+
+
+
+
+
+
+
+
+
+//UPCOMING
+server.get('/upcomingEvents',  { preHandler: verifyToken }, async (request, reply) => {
     try {
-        const response = deleteEvent(supabase,eventId);
-        reply.send(response);
+        const validEvents = await getEvents(supabase);
+        reply.send(validEvents);
     } catch (error) {
         console.error(error);
-        reply.code(500).send({ message: 'Error deleting event' });
+        reply.code(500).send({ message: 'Error fetching upcoming events' });
+    }
+});
+server.get('/upcomingTastings',  { preHandler: verifyToken }, async (request, reply) => {
+    try {
+        const validEvents = await getTastings(supabase);
+        reply.send(validEvents);
+
+    } catch (error) {
+        console.error(error);
+        reply.code(500).send({ message: 'Error fetching upcoming events' });
     }
 });
 
-server.post<{ Body: Wine }>('/add-wine', { preHandler: verifyToken }, async (request, reply) => {
+server.get('/upcomingDish',  { preHandler: verifyToken }, async (request, reply) => {
     try {
-        const wine = request.body;
-        const res = await addWine(supabase,wine);
-        reply.send({ status: 'success', message: 'Wine added', res });
+        const validEvents = await geUpcomingtWeeklyDish(supabase);
+        reply.send(validEvents);
     } catch (error) {
-        reply.code(500).send({ status: 'error', message:'error' }); // Corrected the error message
+        console.error(error);
+        reply.code(500).send({ message: 'Error fetching upcoming events' });
     }
 });
+server.get('/upcomingWine',  { preHandler: verifyToken }, async (request, reply) => {
+    try {
+        const validEvents = await geUpcomingWeeklyWine(supabase);
+        reply.send(validEvents);
+    } catch (error) {
+        console.error(error);
+        reply.code(500).send({ message: 'Error fetching upcoming events' });
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+//WINES
 server.post<{ Body: Wine[] }>('/add-wines', { preHandler: verifyToken }, async (request, reply) => {
     try {
         const wine = request.body;
@@ -286,15 +301,7 @@ server.post<{ Body: Wine[] }>('/add-wines', { preHandler: verifyToken }, async (
     }
 });
 
-server.get('/get-wines',  { preHandler: verifyToken }, async (request, reply) => {
-    try {
-        const validWines = await getWines(supabase);
-        reply.send(validWines);
-    } catch (error) {
-        console.error(error);
-        reply.code(500).send({ message: 'Error fetching wines' });
-    }
-});
+
 server.get<{ Params: { eventId: number } }>('/get-wines-event/:eventId', { preHandler: verifyToken }, async (request, reply) => {
     try {
         const { eventId } = request.params;
@@ -303,55 +310,6 @@ server.get<{ Params: { eventId: number } }>('/get-wines-event/:eventId', { preHa
     } catch (error) {
         console.error(error);
         reply.code(500).send({ message: 'Error fetching wines' });
-    }
-});
-
-server.get<{Params:{
-    name: string;
-    }}>('/get-wine/:name',  { preHandler: verifyToken }, async (request, reply) => {
-   try {
-         const { name } = request.params;
-         const validWine = await getWine(supabase, name);
-         reply.send(validWine);
-   }catch (e) {
-       throw new Error('Error getting wine from the database');
-   }
-});
-
-server.get<{Params:{
-    eventId: number;
-    }}>('/get-event-wines/:eventId',  { preHandler: verifyToken }, async (request, reply) => {
-    try {
-        const { eventId } = request.params;
-        const validWines = await getEventWines(supabase, eventId);
-        reply.send(validWines);
-    }catch (e) {
-        throw new Error('Error getting wine from the database');
-    }
-});
-
-server.post<{Body:{
-    eventId: number;
-    wineId: number;
-    }}>('/add-event-wine', { preHandler: verifyToken }, async (request, reply) => {
-   try {
-         const { eventId, wineId } = request.body;
-         const res = await addEventWine(supabase,eventId, wineId);
-         reply.send({ status: 'success', message: 'Event wine added' });
-   }catch (e) {
-         throw new Error('Error adding event wine to the database');
-   }
-});
-
-server.delete<{Params:{
-    wineId: number;
-    }}>('/delete-wine/:wineId', { preHandler: verifyToken }, async (request, reply) => {
-    try {
-        const { wineId } = request.params;
-        const response = await deleteWine(supabase,wineId);
-        reply.send(response);
-    } catch (error) {
-        throw new Error('Error deleting wine');
     }
 });
 
